@@ -1,20 +1,58 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { NavigationContainer } from "@react-navigation/native";
+import LoginScreen from "./screens/LoginScreen";
+import RegisterScreen from "./screens/RegisterScreen";
+import HomeScreen from "./screens/HomeScreen";
+import AuthContext from "./contexts/AuthContext";
+import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
+import { loadUser } from "./services/AuthService";
+import { useState, useEffect } from "react";
+import SplashScreen from "./screens/SplashScreen";
+
+const Stack = createNativeStackNavigator()
 
 export default function App() {
+  const [user, setUser] = useState();
+  const [status, setStatus] = useState("loading")
+
+  useEffect(() => {
+     async function runEffect() {
+      try {
+        const user = await loadUser()
+        setUser(user)
+      } catch(e) {
+        console.log("Failed to load user", e)
+      }
+      setStatus("idle")
+     }
+     runEffect()
+  }, [])
+
+  if(status === "loading") {
+    return <SplashScreen />
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+
+<AuthContext.Provider value={{ user, setUser}}>
+ <NavigationContainer>
+  <Stack.Navigator>
+    {user ? (
+      <>
+       <Stack.Screen name="Home" component={HomeScreen} />
+      </>
+    ) : (
+      <>
+       <Stack.Screen name="Login" component={LoginScreen} />
+       <Stack.Screen name="Create account" component={RegisterScreen} />
+       <Stack.Screen name="Forgot password" component={ForgotPasswordScreen} />
+      </>
+    )}
+    
+  </Stack.Navigator>
+ </NavigationContainer>
+ </AuthContext.Provider>
+  )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+
